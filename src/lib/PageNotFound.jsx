@@ -1,21 +1,20 @@
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { Link } from 'react-router-dom'
+import { createPageUrl } from '@/utils'
 
 export default function PageNotFound() {
   return (
-    <div className="min-h-screen bg-white pt-24 pb-16 flex items-center justify-center">
-      <div className="text-center px-6">
-        <h1 className="text-2xl tracking-[0.2em] font-light text-neutral-900 mb-3">
-          PAGE NOT FOUND
-        </h1>
-        <p className="text-neutral-500 mb-8">The page you’re looking for doesn’t exist.</p>
+    <div className="min-h-screen flex items-center justify-center p-6 bg-[#FFF7ED]">
+      <div className="max-w-md w-full text-center space-y-6">
+        <h1 className="text-7xl font-light text-orange-300">404</h1>
+        <h2 className="text-2xl font-medium text-slate-800">Page not found</h2>
+        <p className="text-slate-600">The page you opened does not exist in this build.</p>
         <Link
-          to={createPageUrl("Home")}
-          className="inline-flex items-center gap-2 px-8 py-4 bg-black text-white text-sm tracking-wider hover:bg-neutral-800 transition-colors"
+          to={createPageUrl('Home')}
+          className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600"
         >
-          GO HOME
+          Go Home
         </Link>
       </div>
     </div>
-  );
+  )
 }
