@@ -1,4 +1,67 @@
-import React, { useState } from 'react'
+import React from "react";
+
+export default function Footer() {
+  return (
+    <footer className="bg-orange-500 text-white mt-16">
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        <div className="grid gap-10 md:grid-cols-4">
+          <div>
+            <h3
+              className="text-lg font-bold tracking-[0.18em] mb-4"
+              style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+            >
+              FRIENEMIES
+            </h3>
+            <p className="text-white/85 text-sm leading-6">
+              Bold streetwear for the ones who stand out naturally.
+            </p>
+          </div>
+
+          <div>
+            <h4 className="font-semibold mb-4">Shop</h4>
+            <ul className="space-y-2 text-sm text-white/85">
+              <li>T-Shirts</li>
+              <li>Hoodies</li>
+              <li>Jackets</li>
+              <li>Accessories</li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold mb-4">Help</h4>
+            <ul className="space-y-2 text-sm text-white/85">
+              <li>Contact</li>
+              <li>Shipping</li>
+              <li>Returns</li>
+              <li>FAQs</li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold mb-4">Newsletter</h4>
+            <p className="text-sm text-white/85 mb-3">
+              Get updates on new drops and offers.
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="email"
+                placeholder="Your email"
+                className="w-full rounded-full px-4 py-2 text-black outline-none"
+              />
+              <button className="rounded-full bg-white text-orange-500 px-4 py-2 font-semibold">
+                Join
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-white/20 mt-10 pt-6 text-sm text-white/80 text-center">
+          © 2026 Frienemies Official
+        </div>
+      </div>
+    </footer>
+  );
+} React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, Instagram, Facebook, Twitter } from 'lucide-react'
 import { toast } from 'sonner'
