@@ -1,0 +1,21 @@
+{
+  "name": "Brand",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Brand name"
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "Brand logo URL"
+    },
+    "display_order": {
+      "type": "number",
+      "description": "Display order in carousel"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}
