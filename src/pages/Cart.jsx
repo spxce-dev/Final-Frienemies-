@@ -8,18 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 const CART_SYNC_API =
   "https://farbeyond.co.za/wordpress/wp-json/farbeyond/v1/cart/sync";
 
-// localStorage key
 const CART_KEY = "cart";
-
-// Expected stored item shape:
-// {
-//   product_id: number,
-//   name: string,
-//   price: string|number,
-//   image: string,
-//   quantity: number
-//   (optional) brand: string
-// }
 
 function readCart() {
   try {
@@ -31,7 +20,14 @@ function readCart() {
 
 function writeCart(items) {
   localStorage.setItem(CART_KEY, JSON.stringify(items));
-  window.dispatchEvent(new Event('cart:updated'));
+  window.dispatchEvent(new Event("cart:updated"));
+}
+
+function getItemKey(item) {
+  const productId = Number(item?.product_id || 0);
+  const variationId = Number(item?.variation_id || 0);
+  const size = String(item?.size || "").trim().toLowerCase();
+  return `${productId}__${variationId}__${size}`;
 }
 
 export default function Cart() {
@@ -46,16 +42,19 @@ export default function Cart() {
 
   const cartWithProducts = cartItems
     .map((i) => ({
-      // map to UI’s expected fields
-      id: i.product_id, // stable key
+      id: getItemKey(i),
+      cart_key: getItemKey(i),
       product_id: i.product_id,
+      variation_id: i.variation_id || null,
+      size: i.size || "",
+      attributes: Array.isArray(i.attributes) ? i.attributes : [],
       quantity: Number(i.quantity || 1),
       product: {
         id: i.product_id,
         name: i.name || "Product",
         price: Number(i.price || 0),
         image_url: i.image || "",
-        brand: i.brand || "", // optional
+        brand: i.brand || "",
       },
     }))
     .filter((i) => i.product && i.product_id);
@@ -67,19 +66,17 @@ export default function Cart() {
     );
   }, [cartWithProducts]);
 
-  const updateQty = (productId, nextQty) => {
+  const updateQty = (cartKey, nextQty) => {
     const qty = Math.max(1, Number(nextQty || 1));
     const updated = cartItems.map((i) =>
-      Number(i.product_id) === Number(productId) ? { ...i, quantity: qty } : i
+      getItemKey(i) === cartKey ? { ...i, quantity: qty } : i
     );
     setCartItems(updated);
     writeCart(updated);
   };
 
-  const removeItem = (productId) => {
-    const updated = cartItems.filter(
-      (i) => Number(i.product_id) !== Number(productId)
-    );
+  const removeItem = (cartKey) => {
+    const updated = cartItems.filter((i) => getItemKey(i) !== cartKey);
     setCartItems(updated);
     writeCart(updated);
   };
@@ -91,11 +88,20 @@ export default function Cart() {
     try {
       const res = await fetch(CART_SYNC_API, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items: cartItems.map((i) => ({
             product_id: Number(i.product_id),
+            variation_id: i.variation_id ? Number(i.variation_id) : 0,
             quantity: Math.max(1, Number(i.quantity || 1)),
+            size: i.size || "",
+            attributes:
+              Array.isArray(i.attributes) && i.attributes.length > 0
+                ? i.attributes
+                : i.size
+                ? [{ name: "Size", option: i.size }]
+                : [],
           })),
         }),
       });
@@ -109,13 +115,12 @@ export default function Cart() {
       window.location.href = data.checkout_url;
     } catch (e) {
       console.error(e);
-      alert("Checkout failed. Please try again.");
+      alert(e?.message || "Checkout failed. Please try again.");
     } finally {
       setIsCheckingOut(false);
     }
   };
 
-  // Loading skeleton (keeps your original “premium” feel)
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white pt-24 pb-16 px-6 md:px-12">
@@ -138,7 +143,6 @@ export default function Cart() {
     );
   }
 
-  // Empty state (same vibe as your original)
   if (cartWithProducts.length === 0) {
     return (
       <div className="min-h-screen bg-white pt-24 pb-16 flex items-center justify-center">
@@ -180,19 +184,17 @@ export default function Cart() {
         </motion.h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Cart Items */}
           <div className="lg:col-span-2 space-y-6">
             <AnimatePresence mode="popLayout">
               {cartWithProducts.map((item) => (
                 <motion.div
-                  key={item.product_id}
+                  key={item.cart_key}
                   layout
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -100 }}
                   className="flex gap-6 pb-6 border-b border-neutral-100"
                 >
-                  {/* Image */}
                   <Link
                     to={{
                       pathname: createPageUrl("ProductDetail"),
@@ -214,7 +216,6 @@ export default function Cart() {
                     </div>
                   </Link>
 
-                  {/* Details */}
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
                       {item.product.brand ? (
@@ -233,27 +234,24 @@ export default function Cart() {
                           {item.product.name}
                         </h3>
                       </Link>
+
+                      {item.size ? (
+                        <p className="text-sm text-neutral-500 mt-1">Size: {item.size}</p>
+                      ) : null}
                     </div>
 
                     <div className="flex items-center justify-between mt-4">
-                      {/* Quantity */}
                       <div className="flex items-center border border-neutral-200">
                         <button
-                          onClick={() =>
-                            updateQty(item.product_id, item.quantity - 1)
-                          }
+                          onClick={() => updateQty(item.cart_key, item.quantity - 1)}
                           className="w-8 h-8 flex items-center justify-center hover:bg-neutral-50"
                           aria-label="Decrease quantity"
                         >
                           <Minus className="w-3 h-3" />
                         </button>
-                        <span className="w-10 text-center text-sm">
-                          {item.quantity}
-                        </span>
+                        <span className="w-10 text-center text-sm">{item.quantity}</span>
                         <button
-                          onClick={() =>
-                            updateQty(item.product_id, item.quantity + 1)
-                          }
+                          onClick={() => updateQty(item.cart_key, item.quantity + 1)}
                           className="w-8 h-8 flex items-center justify-center hover:bg-neutral-50"
                           aria-label="Increase quantity"
                         >
@@ -261,13 +259,12 @@ export default function Cart() {
                         </button>
                       </div>
 
-                      {/* Price & Delete */}
                       <div className="flex items-center gap-4">
                         <span className="font-semibold">
                           R{(item.product.price * item.quantity).toFixed(2)}
                         </span>
                         <button
-                          onClick={() => removeItem(item.product_id)}
+                          onClick={() => removeItem(item.cart_key)}
                           className="text-neutral-400 hover:text-red-500 transition-colors"
                           aria-label="Remove item"
                         >
@@ -288,7 +285,6 @@ export default function Cart() {
             </Link>
           </div>
 
-          {/* Order Summary */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -306,7 +302,6 @@ export default function Cart() {
                   <span>R{subtotal.toFixed(2)}</span>
                 </div>
 
-                {/* Keep your original shipping logic if you want */}
                 <div className="flex justify-between text-sm">
                   <span className="text-neutral-600">Shipping</span>
                   <span>{subtotal >= 100 ? "FREE" : "R150.00"}</span>
@@ -316,9 +311,7 @@ export default function Cart() {
               <div className="border-t border-neutral-200 pt-4 mb-6">
                 <div className="flex justify-between font-semibold">
                   <span>Total</span>
-                  <span>
-                    R{(subtotal + (subtotal >= 100 ? 0 : 150)).toFixed(2)}
-                  </span>
+                  <span>R{(subtotal + (subtotal >= 100 ? 0 : 150)).toFixed(2)}</span>
                 </div>
               </div>
 

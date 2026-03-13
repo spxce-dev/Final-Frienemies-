@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { Filter, X, ChevronDown } from "lucide-react";
+import { Filter, X } from "lucide-react";
 import ProductCard from "@/components/home/ProductCard";
 import { getProducts } from "@/api/wooClient";
 import {
@@ -13,15 +13,75 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function Shop() {
-  // Support both BrowserRouter (?category=) and HashRouter (#/...?... )
+function normalizeSlug(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .trim();
+}
+
+function getQueryParams() {
   const url = window.location.href;
   const qIndex = url.indexOf("?");
-  const params = new URLSearchParams(qIndex !== -1 ? url.slice(qIndex + 1) : "");
+  return new URLSearchParams(qIndex !== -1 ? url.slice(qIndex + 1) : "");
+}
+
+function getBrandValues(product) {
+  const values = new Set();
+
+  if (product?.brand) {
+    values.add(normalizeSlug(product.brand));
+  }
+
+  const attrs = Array.isArray(product?.attributes) ? product.attributes : [];
+  for (const attr of attrs) {
+    const attrName = String(attr?.name || "").toLowerCase();
+    if (attrName === "brand" || attrName === "pa_brand") {
+      const options = Array.isArray(attr?.options)
+        ? attr.options
+        : Array.isArray(attr?.terms)
+        ? attr.terms
+        : [];
+
+      for (const option of options) {
+        values.add(normalizeSlug(option));
+      }
+    }
+  }
+
+  const categories = Array.isArray(product?.categories) ? product.categories : [];
+  for (const category of categories) {
+    if (category?.slug) values.add(normalizeSlug(category.slug));
+    if (category?.name) values.add(normalizeSlug(category.name));
+  }
+
+  const productName = normalizeSlug(product?.name || "");
+  if (productName) {
+    [
+      "armani-exchange",
+      "dolce-gabbana",
+      "burberry",
+      "nike",
+      "gucci",
+      "prada",
+    ].forEach((brandSlug) => {
+      if (productName.includes(brandSlug)) values.add(brandSlug);
+    });
+  }
+
+  return Array.from(values);
+}
+
+export default function Shop() {
+  const params = getQueryParams();
   const categoryFromUrl = params.get("category");
-  const isNew = params.get("new") === "true"; // proxy doesn't provide "new" - we ignore safely
+  const brandFromUrl = params.get("brand");
+  const isNew = params.get("new") === "true";
 
   const [selectedCategory, setSelectedCategory] = useState(categoryFromUrl || "all");
+  const [selectedBrand, setSelectedBrand] = useState(brandFromUrl || "all");
   const [sortBy, setSortBy] = useState("newest");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
@@ -43,13 +103,40 @@ export default function Shop() {
     return [{ value: "all", label: "All Categories" }, ...items];
   }, [products]);
 
+  const brands = useMemo(() => {
+    const map = new Map();
+    for (const product of products) {
+      const brandValues = getBrandValues(product);
+      for (const brand of brandValues) {
+        if (!brand) continue;
+        if (!map.has(brand)) {
+          const label = brand
+            .split("-")
+            .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+            .join(" ");
+          map.set(brand, label);
+        }
+      }
+    }
+
+    const items = Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+    items.sort((a, b) => a.label.localeCompare(b.label));
+    return [{ value: "all", label: "All Brands" }, ...items];
+  }, [products]);
+
   const filteredProducts = useMemo(() => {
     const list = (products || []).filter((p) => {
       const cats = Array.isArray(p.categories) ? p.categories : [];
+      const brandValues = getBrandValues(p);
+
       const categoryMatch =
         selectedCategory === "all" || cats.some((c) => c?.slug === selectedCategory);
-      const newMatch = !isNew; // no "new" flag from proxy; keep stable
-      return categoryMatch && newMatch;
+
+      const brandMatch =
+        selectedBrand === "all" || brandValues.includes(normalizeSlug(selectedBrand));
+
+      const newMatch = !isNew;
+      return categoryMatch && brandMatch && newMatch;
     });
 
     list.sort((a, b) => {
@@ -61,13 +148,12 @@ export default function Shop() {
         case "name":
           return String(a.name || "").localeCompare(String(b.name || ""));
         default:
-          // newest: proxy doesn't include created_date consistently, so use id
           return Number(b.id || 0) - Number(a.id || 0);
       }
     });
 
     return list;
-  }, [products, selectedCategory, sortBy, isNew]);
+  }, [products, selectedCategory, selectedBrand, sortBy, isNew]);
 
   return (
     <div className="min-h-screen bg-white pt-24 pb-16">
@@ -90,8 +176,7 @@ export default function Shop() {
           </button>
         </div>
 
-        {/* Desktop Filters */}
-        <div className="hidden md:flex items-center gap-6 mb-10">
+        <div className="hidden md:flex items-center gap-6 mb-10 flex-wrap">
           <div className="w-64">
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="h-11">
@@ -101,6 +186,21 @@ export default function Shop() {
                 {categories.map((c) => (
                   <SelectItem key={c.value} value={c.value}>
                     {c.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="w-64">
+            <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="Brand" />
+              </SelectTrigger>
+              <SelectContent>
+                {brands.map((b) => (
+                  <SelectItem key={b.value} value={b.value}>
+                    {b.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -122,7 +222,6 @@ export default function Shop() {
           </div>
         </div>
 
-        {/* Mobile Filters Drawer */}
         <AnimatePresence>
           {mobileFiltersOpen && (
             <motion.div
@@ -168,6 +267,23 @@ export default function Shop() {
                   </div>
 
                   <div>
+                    <p className="text-xs text-neutral-500 mb-2 tracking-wider">BRAND</p>
+                    <div className="border border-neutral-200">
+                      <select
+                        className="w-full h-11 px-3 text-sm bg-white"
+                        value={selectedBrand}
+                        onChange={(e) => setSelectedBrand(e.target.value)}
+                      >
+                        {brands.map((b) => (
+                          <option key={b.value} value={b.value}>
+                            {b.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
                     <p className="text-xs text-neutral-500 mb-2 tracking-wider">SORT BY</p>
                     <div className="border border-neutral-200">
                       <select
@@ -185,7 +301,7 @@ export default function Shop() {
 
                   <button
                     onClick={() => setMobileFiltersOpen(false)}
-                    className="w-full py-3 bg-orange-500 text-white text-sm tracking-wider hover:bg-orange-600"
+                    className="w-full py-3 bg-black text-white text-sm tracking-wider"
                   >
                     APPLY
                   </button>
@@ -195,7 +311,6 @@ export default function Shop() {
           )}
         </AnimatePresence>
 
-        {/* Products */}
         {isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -208,13 +323,9 @@ export default function Shop() {
             ))}
           </div>
         ) : error ? (
-          <div className="text-center text-neutral-500 py-20">
-            Failed to load products.
-          </div>
+          <div className="text-center text-neutral-500 py-20">Failed to load products.</div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center text-neutral-500 py-20">
-            No products found.
-          </div>
+          <div className="text-center text-neutral-500 py-20">No products found.</div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
             {filteredProducts.map((product, index) => (
