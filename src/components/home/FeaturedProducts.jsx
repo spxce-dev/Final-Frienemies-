@@ -4,10 +4,9 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import ProductCard from './ProductCard';
 
-export default function FeaturedProducts({ products, title = "NEW ARRIVALS", subtitle = "Discover our latest curated pieces" }) {
+export default function FeaturedProducts({ products, title = "NEW DROPS", subtitle = "Fresh Frienemies pieces, ready to wear." }) {
   return (
     <section className="py-16 md:py-24 px-6 md:px-12 bg-white">
-      {/* Section Header */}
       <div className="text-center mb-12">
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
@@ -28,21 +27,17 @@ export default function FeaturedProducts({ products, title = "NEW ARRIVALS", sub
         </motion.p>
       </div>
 
-      {/* Products Grid */}
-<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8 max-w-7xl mx-auto">
-  {(products ?? []).map((product, index) => (
-    <ProductCard key={product.id} product={product} index={index} />
-  ))}
-</div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8 max-w-7xl mx-auto">
+        {(products ?? []).map((product, index) => (
+          <ProductCard key={product.id} product={product} index={index} />
+        ))}
+      </div>
 
-{(!products || products.length === 0) && (
-  <div className="text-center text-sm text-neutral-500 mt-8">
-    No products found.
-  </div>
-)}
+      {(!products || products.length === 0) && (
+        <div className="text-center text-sm text-neutral-500 mt-8">No products found.</div>
+      )}
 
-      {/* View All Link */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
@@ -52,7 +47,7 @@ export default function FeaturedProducts({ products, title = "NEW ARRIVALS", sub
         <Link to={createPageUrl('Shop')}>
           <motion.button
             whileHover={{ x: 5 }}
-            className="flex items-center gap-3 text-sm tracking-[0.15em] text-orange-500 hover:text-orange-600 transition-colors group"
+            className="flex items-center gap-3 text-sm tracking-[0.15em] text-primary hover:text-orange-700 transition-colors group"
           >
             VIEW ALL PRODUCTS
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

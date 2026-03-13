@@ -1,17 +1,17 @@
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 const brands = [
-  { name: 'T-Shirts', abbrev: 'TEES', subtitle: 'ESSENTIAL FITS' },
-  { name: 'Hoodies', abbrev: 'HD', subtitle: 'HEAVYWEIGHT' },
-  { name: 'Jackets', abbrev: 'JKT', subtitle: 'OUTER LAYER' },
-  { name: 'Pants', abbrev: 'PNT', subtitle: 'CLEAN CUTS' },
-  { name: 'Caps', abbrev: 'CAP', subtitle: 'ACCESSORIES' },
-  { name: 'Drop', abbrev: 'NEW', subtitle: 'LATEST PIECES' },
+  { name: "Chains", abbrev: "C", subtitle: "STATEMENT CHAINS" },
+  { name: "Rings", abbrev: "R", subtitle: "STACKED RINGS" },
+  { name: "Bracelets", abbrev: "B", subtitle: "ICED BRACELETS" },
+  { name: "Pendants", abbrev: "P", subtitle: "SIGNATURE PENDANTS" },
+  { name: "Daily Wear", abbrev: "D", subtitle: "EVERYDAY SHINE" },
+  { name: "Gift Picks", abbrev: "G", subtitle: "GIFT READY" },
 ];
 
 export default function BrandCarousel() {
   return (
-    <section className="py-16 bg-orange-50">
+    <section className="py-10 md:py-14 bg-white">
       <div className="overflow-x-auto scrollbar-hide">
         <div className="flex gap-6 px-6 md:px-12 min-w-max md:justify-center">
           {brands.map((brand, index) => (
@@ -19,19 +19,17 @@ export default function BrandCarousel() {
               key={brand.name}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+              transition={{ delay: index * 0.08, duration: 0.4 }}
               viewport={{ once: true }}
-              whileHover={{ scale: 1.05 }}
-              className="flex-shrink-0 w-28 h-28 md:w-32 md:h-32 rounded-full border border-orange-200 bg-white flex flex-col items-center justify-center cursor-pointer hover:border-orange-400 transition-all duration-300 shadow-sm"
+              className="w-[180px] h-[180px] md:w-[210px] md:h-[210px] rounded-full border border-primary/15 bg-gradient-to-br from-white to-orange-50 flex flex-col items-center justify-center text-center hover:border-primary transition-colors cursor-default shadow-[0_14px_35px_rgba(255,107,53,0.08)]"
             >
-              <span className="text-lg md:text-xl font-semibold tracking-wide text-orange-500">
+              <div className="text-3xl md:text-4xl font-semibold text-primary leading-none">
                 {brand.abbrev}
-              </span>
-              {brand.subtitle && (
-                <span className="text-[8px] tracking-widest text-neutral-500 mt-1 text-center px-2">
-                  {brand.subtitle}
-                </span>
-              )}
+              </div>
+
+              <div className="mt-4 text-[11px] md:text-xs tracking-[0.18em] text-neutral-600 uppercase px-5">
+                {brand.subtitle}
+              </div>
             </motion.div>
           ))}
         </div>
